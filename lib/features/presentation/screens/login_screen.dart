@@ -53,21 +53,29 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Text(
-                      'Welcome Back!',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
-                      ),
-                    ),
+                  Image.network(
+                    'https://opengeekslab.com/wp-content/uploads/2021/04/Why-a-Parking-App-Is-the-New-Black.png',
+                     width: double.infinity,
+                     
                   ),
+                  
+                  // Center(
+                  //   child: Text(
+                  //     'Welcome Back!',
+                  //     style: TextStyle(
+                  //       fontSize: 28,
+                  //       fontWeight: FontWeight.bold,
+                  //       color: Colors.teal,
+                  //     ),
+                  //   ),
+                  // ),
                   const SizedBox(height: 10),
                   Center(
                     child: Text(
-                      'Login to your account',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                      'Welcome Back!',
+                      
+                      
+                      style: TextStyle(fontSize: 28, color: Colors.teal,fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 50),
@@ -78,6 +86,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
+                      }
+                      final emailRegex = RegExp(
+                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Please enter a valid email';
                       }
                       return null;
                     },
@@ -96,16 +109,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'Forgot Password?',
-                        style: TextStyle(color: Colors.teal),
-                      ),
-                    ),
-                  ),
+                  // Align(
+                  //   alignment: Alignment.centerRight,
+                  //   child: TextButton(
+                  //     onPressed: () {},
+                  //     child: Text(
+                  //       'Forgot Password?',
+                  //       style: TextStyle(color: Colors.teal),
+                  //     ),
+                  //   ),
+                  // ),
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,

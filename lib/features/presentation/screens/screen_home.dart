@@ -1,31 +1,54 @@
+// ignore_for_file: use_key_in_widget_constructors
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:parking_management/features/presentation/widgets/custom_appbar.dart';
+import 'package:parking_management/firebase/services.dart';
 
 class ParkingSlotCubit extends Cubit<List<bool>> {
-  ParkingSlotCubit(int numberOfSlots) : super(List.generate(numberOfSlots, (index) => true));
+  final FirebaseService _firebaseService;
+  ParkingSlotCubit(this._firebaseService) : super([]) {
+    _fetchParkingSlots();
+    
+  }
 
-  void toggleSlot(int index) {
-    final updatedSlots = List<bool>.from(state);
-    updatedSlots[index] = !updatedSlots[index];
-    emit(updatedSlots);
+  
+  void _fetchParkingSlots() async {
+    _firebaseService.getParkingSlotsStream().listen((slotsData) {
+      emit(slotsData);
+    });
+  }
+
+ void reserveSlot(int index) async {
+  if (state[index]) {
+    DateTime entryTime = DateTime.now();
+    await _firebaseService.reserveSlot(index + 1, entryTime);
+    emit(List.from(state)..[index] = false);
   }
 }
+
+
+
+
+}
+
 
 class ScreenHome extends StatelessWidget {
   const ScreenHome({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final int numberOfSlots = 20;
     return BlocProvider(
-      create: (context) => ParkingSlotCubit(numberOfSlots),
+      create: (context) => ParkingSlotCubit(FirebaseService()),
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Home'),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: BlocBuilder<ParkingSlotCubit, List<bool>>(
             builder: (context, slots) {
+              if (slots.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
               return GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
@@ -33,10 +56,48 @@ class ScreenHome extends StatelessWidget {
                   mainAxisSpacing: 16,
                   childAspectRatio: 1,
                 ),
-                itemCount: numberOfSlots,
+                itemCount: slots.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    onTap: () => context.read<ParkingSlotCubit>().toggleSlot(index),
+                   onTap: () {
+  final cubit = context.read<ParkingSlotCubit>();
+  if (slots[index]) {
+    DateTime entryTime = DateTime.now();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Reservation"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Slot: ${index + 1}"),
+            Text("Entry Time: ${entryTime.toLocal()}"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              cubit.reserveSlot(index);
+              Navigator.pop(context);
+            },
+            child: const Text("Confirm"),
+          ),
+        ],
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text("Slot ${index + 1} is already booked")),
+    );
+  }
+},
+
                     child: ParkingSlotWidget(
                       slotNumber: index + 1,
                       isAvailable: slots[index],
@@ -56,13 +117,16 @@ class ParkingSlotWidget extends StatelessWidget {
   final int slotNumber;
   final bool isAvailable;
 
-  const ParkingSlotWidget({required this.slotNumber, required this.isAvailable});
+  const ParkingSlotWidget(
+      {required this.slotNumber, required this.isAvailable});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isAvailable ? Colors.black : Colors.yellow,
+        color: isAvailable
+            ? Colors.black
+            : Colors.red,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -77,11 +141,6 @@ class ParkingSlotWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // const Icon(
-          //   Icons.local_parking,
-          //   color: Colors.white,
-          //   size: 36,
-          // ),
           const SizedBox(height: 10),
           Text(
             'Slot $slotNumber',
@@ -91,8 +150,18 @@ class ParkingSlotWidget extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 10),
+          Text(
+            isAvailable ? 'Available' : 'Booked',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
   }
+  
 }

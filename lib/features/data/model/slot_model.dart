@@ -1,30 +1,20 @@
-// 
+
+
+
 
 
 class ParkingSlot {
-  final String slotNumber;
-  final bool isReserved;
+  final int id;
+  final bool isOccupied;
   final DateTime? entryTime;
 
-  ParkingSlot({
-    required this.slotNumber,
-    this.isReserved = false,
-    this.entryTime,
-  });
+  ParkingSlot({required this.id,  this.isOccupied=false,this.entryTime});
 
-  Map<String, dynamic> toJson() {
-    return {
-      'slotNumber': slotNumber,
-      'isReserved': isReserved,
-      'entryTime': entryTime?.toIso8601String(),
-    };
-  }
-
-  factory ParkingSlot.fromJson(Map<String, dynamic> json) {
+  ParkingSlot copyWith({bool? isOccupied,DateTime?entryTime}) {
     return ParkingSlot(
-      slotNumber: json['slotNumber'],
-      isReserved: json['isReserved'],
-      entryTime: json['entryTime'] != null ? DateTime.parse(json['entryTime']) : null,
+      id: id,
+      isOccupied: isOccupied ?? this.isOccupied,
+      entryTime: entryTime??this.entryTime
     );
   }
 }

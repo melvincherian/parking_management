@@ -6,12 +6,14 @@ sealed class SlotState {}
 final class SlotInitial extends SlotState {}
 
 
-class Parkingstate {
-  final Map<int,bool>slots;
+class ParkLoading extends SlotState{}
 
-  Parkingstate({required this.slots});
+class ParkError extends SlotState {
+  final String error;
+  ParkError(this.error);
+}
 
-   Parkingstate copyWith({Map<int, bool>? slots}) {
-    return Parkingstate(slots: slots ?? this.slots);
-  }
+class ParkLoaded extends SlotState{
+  final List<ParkingSlot>slot;
+  ParkLoaded(this.slot);
 }

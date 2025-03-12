@@ -52,14 +52,8 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Sign up to park your spot',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal,
-                  ),
-                ),
+                Image.network('https://www.mindinventory.com/blog/wp-content/uploads/2022/10/car-parking-app.png'),
+              
                 const SizedBox(height: 40),
                 SignupTextFormField(
                   hintText: 'Username',
