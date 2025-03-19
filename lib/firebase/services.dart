@@ -13,13 +13,29 @@ Stream<List<bool>> getParkingSlotsStream() {
 }
 
 
-  Future<void> reserveSlot(int slotNumber, DateTime timestamp) async {
+Future<void> releaseSlot(int slotNumber) async {
+    await FirebaseFirestore.instance
+        .collection('parkingSlots')
+        .doc(slotNumber.toString())
+        .update({'isAvailable': true});
+  }
+  
+
+
+
+Future<void> reserveSlot(int slotNumber, DateTime timestamp) async {
     await _firestore.collection('parkingSlots').doc('$slotNumber').set({
       'isBooked': true,
       'timestamp': timestamp,
     }, SetOptions(merge: true));
   }
 }
+
+
+
+
+
+
 
 
 

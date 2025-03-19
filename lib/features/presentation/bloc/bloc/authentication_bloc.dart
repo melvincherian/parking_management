@@ -16,6 +16,7 @@ class AuthenticationBloc
         super(AuthenticationInitial()) {
     on<SignupRequested>(_onsignupRequested);
     on<LoginRequested>(_onLoginRequested);
+    on<LogoutRequested>(_onLogoutRequested);
   }
 
   Future<void> _onsignupRequested(
@@ -47,5 +48,13 @@ class AuthenticationBloc
     } else {
       emit(AuthenticationFailure(error: result, source: 'login'));
     }
+  }
+
+  Future<void> _onLogoutRequested(
+    LogoutRequested event,
+    Emitter<AuthenticationState> emit,
+  ) async {
+    await _authRepository.logout();
+    emit(AuthenticationLoggedOut());
   }
 }

@@ -13,7 +13,8 @@ class SignupRequested extends AuthenticationEvent {
       {required this.name,
       required this.email,
       required this.password,
-      required this.source});
+      required this.source
+      });
 }
 
 class LogoutRequested extends AuthenticationEvent {}
@@ -28,6 +29,8 @@ class LoginRequested extends AuthenticationEvent {
 }
 
 class CheckauthenticationStatus extends AuthenticationEvent {}
+
+
 
 class AuthenticationStatusChanged extends AuthenticationEvent {
   final bool isAuthenticated;

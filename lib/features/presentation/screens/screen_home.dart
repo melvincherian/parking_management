@@ -7,30 +7,60 @@ import 'package:parking_management/firebase/services.dart';
 
 class ParkingSlotCubit extends Cubit<List<bool>> {
   final FirebaseService _firebaseService;
+  final Map<int, DateTime> _entryTimeMap = {};
+
   ParkingSlotCubit(this._firebaseService) : super([]) {
     _fetchParkingSlots();
-    
   }
 
-  
   void _fetchParkingSlots() async {
     _firebaseService.getParkingSlotsStream().listen((slotsData) {
       emit(slotsData);
     });
   }
 
- void reserveSlot(int index) async {
-  if (state[index]) {
-    DateTime entryTime = DateTime.now();
-    await _firebaseService.reserveSlot(index + 1, entryTime);
-    emit(List.from(state)..[index] = false);
+  void reserveSlot(int index) async {
+    if (state[index]) {
+      DateTime entryTime = DateTime.now();
+      _entryTimeMap[index] = entryTime; 
+      await _firebaseService.reserveSlot(index + 1, entryTime);
+      emit(List.from(state)..[index] = false);
+    }
   }
-}
 
+  Future<double> calculateFee(int index) async {
+    DateTime exitTime = DateTime.now();
+    DateTime entryTime = _entryTimeMap[index] ?? exitTime;
 
+    Duration duration = exitTime.difference(entryTime);
+    int minutes = duration.inMinutes;
 
+    if (minutes <= 10) {
+      return 0.0; // Free
+    } else {
+      int hours = (minutes / 60).ceil(); // Round up to the nearest hour
+      return hours * 100;
+    }
+  }
 
-}
+  void releaseSlot(int index) async {
+    if (!state[index]) {
+      double fee = await calculateFee(index);
+      await _firebaseService.releaseSlot(index + 1);
+      _entryTimeMap.remove(index); // Remove entry time after release
+      emit(List.from(state)..[index] = true);
+
+      // Show fee dialog
+      emitFeeDialog(fee);
+    }
+  }
+
+  void emitFeeDialog(double fee) {
+
+  }
+
+  
+  }
 
 
 class ScreenHome extends StatelessWidget {
@@ -41,7 +71,7 @@ class ScreenHome extends StatelessWidget {
     return BlocProvider(
       create: (context) => ParkingSlotCubit(FirebaseService()),
       child: Scaffold(
-        appBar: const CustomAppBar(title: 'Home'),
+        appBar: const CustomAppBar(title: 'Parking Slots'),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: BlocBuilder<ParkingSlotCubit, List<bool>>(
@@ -51,7 +81,7 @@ class ScreenHome extends StatelessWidget {
               }
               return GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
+                  crossAxisCount: 3,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                   childAspectRatio: 1,
@@ -59,46 +89,15 @@ class ScreenHome extends StatelessWidget {
                 itemCount: slots.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                   onTap: () {
-  final cubit = context.read<ParkingSlotCubit>();
-  if (slots[index]) {
-    DateTime entryTime = DateTime.now();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirm Reservation"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Slot: ${index + 1}"),
-            Text("Entry Time: ${entryTime.toLocal()}"),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              cubit.reserveSlot(index);
-              Navigator.pop(context);
-            },
-            child: const Text("Confirm"),
-          ),
-        ],
-      ),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.red,
-        content: Text("Slot ${index + 1} is already booked")),
-    );
-  }
-},
-
-                    child: ParkingSlotWidget(
+                    onTap: () {
+                      final cubit = context.read<ParkingSlotCubit>();
+                      if (slots[index]) {
+                        _showReservationDialog(context, cubit, index);
+                      } else {
+                        _showReleaseDialogBox(context, cubit, index);
+                      }
+                    },
+                    child: ParkingSlotCard(
                       slotNumber: index + 1,
                       isAvailable: slots[index],
                     ),
@@ -111,28 +110,134 @@ class ScreenHome extends StatelessWidget {
       ),
     );
   }
+
+  void _showReleaseDialogBox(BuildContext context, ParkingSlotCubit cubit, int index) async {
+  double fee = await cubit.calculateFee(index);
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Release Slot", style: TextStyle(fontWeight: FontWeight.bold)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text("Do you want to release Slot ${index + 1}?", style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 10),
+          Text(
+            fee == 0 ? "Parking is Free (Less than 10 min)" : "Parking Fee: \$$fee",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            cubit.releaseSlot(index);
+            Navigator.pop(context);
+          },
+          child: const Text("Release"),
+        ),
+      ],
+    ),
+  );
 }
 
-class ParkingSlotWidget extends StatelessWidget {
+
+  void _showReservationDialog(
+      BuildContext context, ParkingSlotCubit cubit, int index) {
+    DateTime entryTime = DateTime.now();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Reservation",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Slot: ${index + 1}", style: const TextStyle(fontSize: 16)),
+            Text("Entry Time: ${entryTime.toLocal()}",
+                style: const TextStyle(fontSize: 16)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            onPressed: () {
+              cubit.reserveSlot(index);
+              Navigator.pop(context);
+            },
+            child: const Text(
+              "Confirm",
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+
+
+
+
+  }
+
+
+  
+
+  void _showReleaseDialogb(
+      BuildContext context, ParkingSlotCubit cubit, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Release Slot",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text("Do you want to release Slot ${index + 1}?",
+            style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              cubit.releaseSlot(index);
+              Navigator.pop(context);
+            },
+            child: const Text("Release"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ParkingSlotCard extends StatelessWidget {
   final int slotNumber;
   final bool isAvailable;
 
-  const ParkingSlotWidget(
-      {required this.slotNumber, required this.isAvailable});
+  const ParkingSlotCard(
+      {required this.slotNumber, required this.isAvailable, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: isAvailable
-            ? Colors.black
-            : Colors.red,
-        borderRadius: BorderRadius.circular(12),
+        color: isAvailable ? Colors.green[600] : Colors.red[600],
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(0.1),
             spreadRadius: 2,
-            blurRadius: 6,
+            blurRadius: 8,
             offset: const Offset(2, 4),
           ),
         ],
@@ -141,6 +246,11 @@ class ParkingSlotWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Icon(
+            isAvailable ? Icons.directions_car_filled_outlined : Icons.lock,
+            color: Colors.white,
+            size: 30,
+          ),
           const SizedBox(height: 10),
           Text(
             'Slot $slotNumber',
@@ -163,5 +273,4 @@ class ParkingSlotWidget extends StatelessWidget {
       ),
     );
   }
-  
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:parking_management/features/presentation/provider/bottom_navbar.dart';
 import 'package:parking_management/features/presentation/screens/history_screen.dart';
+import 'package:parking_management/features/presentation/screens/profile_screen.dart';
 import 'package:parking_management/features/presentation/screens/screen_home.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +15,7 @@ class HomeScreen extends StatelessWidget {
     final pages = [
       const ScreenHome(),
       const HistoryScreen(),
+      const ProfileScreen()
     
     ];
 
@@ -35,6 +37,10 @@ class HomeScreen extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: 'History',
+          ),
+           BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
           
         ],

@@ -13,7 +13,6 @@ class AuthenticationSuccess extends AuthenticationState{
 
   AuthenticationSuccess({required this.userId,required this.source});
 
-
 }
 
 class AuthenticationFailure extends AuthenticationState{
@@ -21,4 +20,8 @@ class AuthenticationFailure extends AuthenticationState{
   final String source;
 
   AuthenticationFailure({required this.error,required this.source});
+  
 }
+
+
+final class AuthenticationLoggedOut extends AuthenticationState {}

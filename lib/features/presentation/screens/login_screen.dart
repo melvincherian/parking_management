@@ -1,5 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parking_management/features/domain/repositories/shared_prefrence.dart';
 import 'package:parking_management/features/presentation/bloc/bloc/authentication_bloc.dart';
 import 'package:parking_management/features/presentation/screens/home_screen.dart';
 import 'package:parking_management/features/presentation/screens/signup_screen.dart';
@@ -21,11 +24,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Login Here!'),
+      appBar:const CustomAppBar(title: 'Login Here!'),
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
         listener: (context, state) async {
           if (state is AuthenticationLoading) {}
           if (state is AuthenticationSuccess && state.source == 'login') {
+            await SharedPrefrenceHelper().saverUserEmail(emailController.text);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
@@ -58,17 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                      width: double.infinity,
                      
                   ),
-                  
-                  // Center(
-                  //   child: Text(
-                  //     'Welcome Back!',
-                  //     style: TextStyle(
-                  //       fontSize: 28,
-                  //       fontWeight: FontWeight.bold,
-                  //       color: Colors.teal,
-                  //     ),
-                  //   ),
-                  // ),
+                
                   const SizedBox(height: 10),
                   Center(
                     child: Text(
@@ -87,11 +81,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
                       }
-                      final emailRegex = RegExp(
-                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                      if (!emailRegex.hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
+                      // final emailRegex = RegExp(
+                      //     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                      // if (!emailRegex.hasMatch(value)) {
+                      //   return 'Please enter a valid email';
+                      // }
                       return null;
                     },
                   ),

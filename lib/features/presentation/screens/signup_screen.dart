@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:parking_management/features/domain/repositories/shared_prefrence.dart';
 import 'package:parking_management/features/presentation/bloc/bloc/authentication_bloc.dart';
 import 'package:parking_management/features/presentation/screens/login_screen.dart';
 import 'package:parking_management/features/presentation/widgets/custom_appbar.dart';
@@ -8,7 +9,7 @@ import 'package:parking_management/features/presentation/widgets/textfield.dart'
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
-
+  
   @override
   State<SignupScreen> createState() => _SignupScreenState();
 }
@@ -30,6 +31,8 @@ class _SignupScreenState extends State<SignupScreen> {
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
         listener: (context, state) async {
           if (state is AuthenticationSuccess && state.source == 'signup') {
+            await SharedPrefrenceHelper().saveUserName(nameController.text);
+            await SharedPrefrenceHelper().saverUserEmail(emailController.text);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
